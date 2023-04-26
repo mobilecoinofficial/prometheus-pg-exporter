@@ -1,0 +1,7 @@
+# Copyright (c) 2018-2023 MobileCoin Inc.
+apiVersion: v2
+name: prometheus-pg-exporter
+description: Simple uptime monitoring for PostgreSQL databases.
+type: application
+version: 0.0.0
+appVersion: "0.0.0"

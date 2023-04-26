@@ -15,7 +15,14 @@
 *.out
 
 # Dependency directories (remove the comment below to include it)
-# vendor/
+vendor/
 
 # Go workspace file
 go.work
+
+# ignore the built binary
+app
+prometheus-pg-exporter
+
+# Don't ignore directories called prometheus-pg-exporter
+!prometheus-pg-exporter/

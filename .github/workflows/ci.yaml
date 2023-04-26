@@ -1,0 +1,124 @@
+# Copyright (c) 2022 MobileCoin Inc.
+name: ci
+
+on:
+  pull_request: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  pull-requests: write
+  contents: read
+
+env:
+  REPO: prometheus-pg-exporter
+  DOCKER_ORG: mobilecoin
+
+jobs:
+  # Build docker container to test, but don't push
+  docker:
+    runs-on: [self-hosted, Linux, small]
+    steps:
+    - name: Checkout
+      uses: mobilecoinofficial/gh-actions/checkout@v0
+
+    - name: Docker
+      uses: mobilecoinofficial/gh-actions/docker@v0
+      with:
+        flavor: latest=true
+        images: ${{ env.DOCKER_ORG }}/${{ env.REPO }}
+        tags: |
+          type=ref,event=branch
+          type=semver,pattern=v{{version}}
+          type=sha
+        dockerfile: .internal-ci/docker/Dockerfile.${{ env.REPO }}
+        push: false
+
+  lint-docker:
+    runs-on: [self-hosted, Linux, small]
+    steps:
+    - name: Checkout
+      uses: mobilecoinofficial/gh-actions/checkout@v0
+
+    - name: Run hadolint with reviewdog
+      uses: reviewdog/action-hadolint@v1
+      with:
+        fail_on_error: true
+        reporter: github-pr-review
+        exclude: |
+          *.dockerignore
+
+  lint-shell:
+    runs-on: [self-hosted, Linux, small]
+    steps:
+    - name: Checkout
+      uses: mobilecoinofficial/gh-actions/checkout@v0
+
+    - name: Run shellcheck with reviewdog
+      uses: reviewdog/action-shellcheck@v1
+      with:
+        fail_on_error: true
+        reporter: github-pr-review
+
+  lint-actions:
+    runs-on: [self-hosted, Linux, small]
+    steps:
+    - name: Checkout
+      uses: mobilecoinofficial/gh-actions/checkout@v0
+
+    - name: Run actionlint with reviewdog
+      uses: reviewdog/action-actionlint@v1
+      with:
+        fail_on_error: true
+        reporter: github-pr-review
+
+  # no reviewdog for helm
+  lint-helm:
+    runs-on: [self-hosted, Linux, small]
+    container:
+      image: mobilecoin/gha-k8s-toolbox:v1
+    steps:
+    - name: Checkout
+      uses: mobilecoinofficial/gh-actions/checkout@v0
+
+    - name: Run helm lint
+      run: |
+        chart_base=".internal-ci/helm"
+        chart_files=$(find "${chart_base}" -name Chart.yaml -type f)
+
+        # helm lint on directories where there are chart.yaml files
+        for c in ${chart_files}
+        do
+          chart=$(dirname "${c}")
+          helm lint --quiet "${chart}"  2>&1
+        done
+
+  lint-go:
+    runs-on: [self-hosted, Linux, small]
+    steps:
+    - name: Checkout
+      uses: mobilecoinofficial/gh-actions/checkout@v0
+
+    - name: golangci-lint
+      uses: reviewdog/action-golangci-lint@v2
+      with:
+        fail_on_error: true
+        reporter: github-pr-review
+
+
+  # Have one noop job at the end that passes if all the other checks pass.
+  # This is so we can just have one "standard" check to add to the branch protections.
+  workflow-ok:
+    needs:
+    - docker
+    - lint-docker
+    - lint-shell
+    - lint-actions
+    - lint-helm
+    runs-on: [self-hosted, Linux, small]
+    steps:
+    - name: All Checks OK!
+      run: |
+        true

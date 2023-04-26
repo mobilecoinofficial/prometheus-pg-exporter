@@ -1,0 +1,86 @@
+# Copyright (c) 2018-2023 MobileCoin Inc.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "prometheus-pg-exporter.fullname" . }}
+  labels:
+    {{- include "prometheus-pg-exporter.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "prometheus-pg-exporter.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        {{- toYaml .Values.podAnnotations | nindent 8 }}
+      labels:
+        {{- include "prometheus-pg-exporter.selectorLabels" . | nindent 8 }}
+    spec:
+      imagePullSecrets:
+        {{- toYaml .Values.imagePullSecrets | nindent 8 }}
+      securityContext: {}
+      containers:
+        - name: exporter
+          securityContext:
+            capabilities:
+              drop:
+              - ALL
+            readOnlyRootFilesystem: true
+            runAsUser: 1000
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            - name: DATABASE_HOSTNAME
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Values.config.configMap.name }}
+                  key: {{ .Values.config.configMap.keys.hostname }}
+            - name: DATABASE_PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Values.config.configMap.name }}
+                  key: {{ .Values.config.configMap.keys.port }}
+            - name: DATABASE_USERNAME
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Values.config.configMap.name }}
+                  key: {{ .Values.config.configMap.keys.username }}
+            - name: DATABASE_PASSWORD
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Values.config.secret.name }}
+                  key: {{ .Values.config.secret.keys.password }}
+            - name: DATABASE_URL_OPTIONS
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Values.config.configMap.name }}
+                  key: {{ .Values.config.configMap.keys.urlOptions }}
+            - name: DATABASE_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ .Values.config.configMap.name }}
+                  key: {{ .Values.config.configMap.keys.databaseName }}
+            - name: DATABASE_URL
+              value: 'postgres://$(DATABASE_USERNAME):$(DATABASE_PASSWORD)@$(DATABASE_HOSTNAME)/$(DATABASE_NAME)$(DATABASE_URL_OPTIONS)'
+          ports:
+            - name: metrics
+              containerPort: 9090
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /metrics
+              port: metrics
+          readinessProbe:
+            httpGet:
+              path: /metrics
+              port: http
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      nodeSelector:
+        {{- toYaml .Values.nodeSelector | nindent 8 }}
+      affinity:
+        {{- toYaml .Values.affinity | nindent 8 }}
+      tolerations:
+        {{- toYaml .Values.tolerations | nindent 8 }}
+

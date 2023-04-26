@@ -1,0 +1,33 @@
+# This docker-compose is for local development
+version: '3.8'
+
+services:
+  db:
+    image: postgres
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "127.0.0.1:5432:5432"
+
+  stay-up:
+    image: ubuntu
+    command: sleep infinity
+
+  api:
+    build:
+      context: .
+      dockerfile: ./.internal-ci/docker/Dockerfile.dev
+    ports:
+    - "127.0.0.1:9090:9090"
+    - "127.0.0.1:2345:2345"
+    environment:
+      DATABASE_URL: "postgres://postgres:postgres@db:5432/postgres?sslmode=disable"
+    restart: always
+    volumes:
+    - ".:/app"
+    - "pkg:/go/pkg/"
+
+volumes:
+  pkg:
+    driver: local

@@ -1,0 +1,15 @@
+# Copyright (c) 2018-2023 MobileCoin Inc.
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ include "prometheus-pg-exporter.fullname" . }}-fog-ledger
+  labels:
+    publish: grafana-cloud
+    {{- include "prometheus-pg-exporter.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      app:
+      {{- include "prometheus-pg-exporter.selectorLabels" . | nindent 6 }}
+  endpoints:
+  - port: metrics

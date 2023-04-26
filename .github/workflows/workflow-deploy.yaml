@@ -1,0 +1,78 @@
+name: workflow-deploy
+
+on:
+  workflow_call:
+    inputs:
+      chart_name:
+        description: Chart name
+        type: string
+        required: true
+      chart_repo:
+        description: Chart repo URL
+        type: string
+        required: false
+        default: https://harbor.mobilecoin.com/chartrepo/mobilecoinofficial-private
+      chart_version:
+        description: Chart version
+        required: true
+        type: string
+      namespace:
+        description: Target namespace
+        required: true
+        type: string
+      rancher_cluster:
+        description: Target Rancher Cluster
+        required: true
+        type: string
+      pg_configmap:
+        description: Name of the configmap to get pg connection details from
+        type: string
+        required: true
+      pg_secret:
+        description: Name of the secret to get pg connection details from
+        type: string
+        required: true
+    secrets:
+      HARBOR_PASSWORD:
+        description: harbor chart repo password
+        required: true
+      HARBOR_USERNAME:
+        description: harbor chart repo username
+        required: true
+      RANCHER_TOKEN:
+        description: Rancher access token
+        required: true
+      RANCHER_URL:
+        description: Rancher server URL
+        required: true
+
+jobs:
+  deploy:
+    runs-on: [self-hosted, Linux, small]
+    steps:
+      - name: Create namespace
+        uses: mobilecoinofficial/gha-k8s-toolbox@v1
+        with:
+          action: namespace-create
+          namespace: ${{ inputs.namespace }}
+          rancher_cluster: ${{ inputs.rancher_cluster }}
+          rancher_url: ${{ secrets.RANCHER_URL }}
+          rancher_token: ${{ secrets.RANCHER_TOKEN }}
+
+      - name: Deploy ${{ inputs.chart_name }}
+        uses: mobilecoinofficial/gha-k8s-toolbox@v1
+        with:
+          action: helm-deploy
+          chart_repo_username: ${{ secrets.HARBOR_USERNAME }}
+          chart_repo_password: ${{ secrets.HARBOR_PASSWORD }}
+          chart_repo: ${{ inputs.chart_repo }}
+          chart_name: ${{ inputs.chart_name }}
+          chart_set: |
+            --set=config.configMap.name=${{ inputs.pg_configmap }}
+            --set=config.secret.name=${{ inputs.pg_secret }}
+          chart_version: ${{ inputs.chart_version }}
+          release_name: ${{ inputs.pg_configmap }}
+          namespace: ${{ inputs.namespace }}
+          rancher_cluster: ${{ inputs.rancher_cluster }}
+          rancher_url: ${{ secrets.RANCHER_URL }}
+          rancher_token: ${{ secrets.RANCHER_TOKEN }}

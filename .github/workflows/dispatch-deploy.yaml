@@ -1,0 +1,56 @@
+
+name: (Manual) Deploy
+
+run-name: Deploy ${{ github.ref_name }} to ${{ inputs.mobilecoin_network }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      mobilecoin_network:
+        description: "MobileCoin Network to upgrade"
+        type: choice
+        required: true
+        options:
+        - stage
+        - prod
+
+jobs:
+  deploy-stage:
+    if: inputs.mobilecoin_network == 'stage'
+    strategy:
+      matrix:
+        targets:
+        - cluster: ""
+          ns: ""
+          config: ""
+
+    uses: ./.github/workflows/workflow-deploy.yaml
+    with:
+      chart_name: https://harbor.mobilecoin.com/chartrepo/mobilecoinofficial-public
+      chart_repo: prometheus-pg-exporter
+      chart_version: ${{ github.ref_name }}
+      namespace: ${{ matrix.targets.ns }}
+      rancher_cluster: ${{ matrix.targets.cluster }}
+      pg_secret: ${{ matrix.targets.config }}
+      pg_configmap: ${{ matrix.targets.config }}
+    secrets: inherit
+
+  deploy-prod:
+    if: inputs.mobilecoin_network == 'prod'
+    strategy:
+      matrix:
+        targets:
+        - cluster: ""
+          ns: ""
+          config: ""
+
+    uses: ./.github/workflows/workflow-deploy.yaml
+    with:
+      chart_name: https://harbor.mobilecoin.com/chartrepo/mobilecoinofficial-public
+      chart_repo: prometheus-pg-exporter
+      chart_version: ${{ github.ref_name }}
+      namespace: ${{ matrix.targets.ns }}
+      rancher_cluster: ${{ matrix.targets.cluster }}
+      pg_secret: ${{ matrix.targets.config }}
+      pg_configmap: ${{ matrix.targets.config }}
+    secrets: inherit

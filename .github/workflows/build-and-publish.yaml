@@ -1,0 +1,45 @@
+# Copyright (c) 2022-2023 MobileCoin Inc.
+name: build-and-publish
+
+on:
+  push:
+    tags:
+    - 'v*.*.*'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  REPO: prometheus-pg-exporter
+  DOCKER_ORG: mobilecoin
+  CHART_REPO: https://harbor.mobilecoin.com/chartrepo/mobilecoinofficial-public
+
+jobs:
+  publish:
+    runs-on: [self-hosted, Linux, small]
+    steps:
+    - name: Checkout
+      uses: mobilecoinofficial/gh-actions/checkout@v0
+
+    - name: Docker
+      uses: mobilecoinofficial/gh-actions/docker@v0
+      with:
+        flavor: latest=true
+        images: ${{ env.DOCKER_ORG }}/${{ env.REPO }}
+        tags: |
+          type=ref,event=branch
+          type=semver,pattern=v{{version}}
+          type=sha
+        dockerfile: .internal-ci/docker/Dockerfile.${{ env.REPO }}
+
+    - name: Build helm chart
+      uses: mobilecoinofficial/gha-k8s-toolbox@v1
+      with:
+        action: helm-publish
+        chart_repo_username: ${{ secrets.HARBOR_USERNAME }}
+        chart_repo_password: ${{ secrets.HARBOR_PASSWORD }}
+        chart_repo: ${{ env.CHART_REPO }}
+        chart_app_version: ${{ github.ref_name }}
+        chart_version: ${{ github.ref_name }}
+        chart_path: .internal-ci/helm/${{ env.REPO }}

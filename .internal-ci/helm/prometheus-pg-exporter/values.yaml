@@ -1,0 +1,47 @@
+# Default values for prometheus-pg-exporter.
+
+replicaCount: 1
+
+image:
+  repository: mobilecoinofficial/prometheus-pg-exporter
+  pullPolicy: always
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: ""
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+podAnnotations: {}
+
+resources:
+  limits:
+    cpu: 100m
+    memory: 128Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+# This chart expects a pre-populated configmap/secret with database details.
+# You can customize the configmap/secret name and keys to match your standard config.
+config:
+  configMap:
+    name: ""
+    # Mapping of configMap keys to construct the database url
+    keys:
+      hostname: postgres-hostname
+      port: postgres-port
+      databaseName: postgres-database
+      urlOptions: postgres-ssl-options
+      username: postgres-username
+  secret:
+    name: ""
+    # Mapping of secret keys to construct the database url
+    keys:
+      password: postgres-password
