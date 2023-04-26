@@ -16,7 +16,6 @@ env:
   CHART_REPO: https://harbor.mobilecoin.com/chartrepo/mobilecoinofficial-public
 
 jobs:
-
   build-and-publish:
     runs-on: [self-hosted, Linux, small]
     container: golang:1.20
@@ -40,7 +39,7 @@ jobs:
           type=ref,event=branch
           type=semver,pattern=v{{version}}
           type=sha
-        username: ${{ secrets.DOCKERHUB_USER }}
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
 
     - name: Build helm chart
       uses: mobilecoinofficial/gha-k8s-toolbox@v1
