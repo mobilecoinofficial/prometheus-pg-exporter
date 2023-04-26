@@ -16,17 +16,43 @@ env:
   CHART_REPO: https://harbor.mobilecoin.com/chartrepo/mobilecoinofficial-public
 
 jobs:
-  build-and-publish:
+  build:
     runs-on: [self-hosted, Linux, small]
     container: golang:1.20
     steps:
     - name: Checkout
       uses: mobilecoinofficial/gh-actions/checkout@v0
 
+    - name: Cache
+      uses: mobilecoinofficial/gh-actions/cache-go-binaries@f5dc11bbbe84ce48a4d835630decb8df6f6386dd
+      with:
+        cache_buster: ${{ vars.CACHE_BUSTER }}
+
     - name: Build
       run: |
         go mod vendor
         go build -v
+
+    - name: Copy binaries to cache
+      run: |
+        cp prometheus-pg-exporter go_artifacts_cache/
+
+  publish:
+    runs-on: [self-hosted, Linux, small]
+    needs:
+    - build
+    steps:
+    - name: Checkout
+      uses: mobilecoinofficial/gh-actions/checkout@v0
+
+    - name: Cache
+      uses: mobilecoinofficial/gh-actions/cache-go-binaries@f5dc11bbbe84ce48a4d835630decb8df6f6386dd
+      with:
+        cache_buster: ${{ vars.CACHE_BUSTER }}
+
+    - name: Copy binaries from cache
+      run: |
+        cp go_artifacts_cache/prometheus-pg-exporter ./
 
     - name: Docker
       uses: mobilecoinofficial/gh-actions/docker@v0
