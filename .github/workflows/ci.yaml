@@ -97,6 +97,7 @@ jobs:
     - lint-shell
     - lint-actions
     - lint-helm
+    - lint-go
     runs-on: [self-hosted, Linux, small]
     steps:
     - name: All Checks OK!
