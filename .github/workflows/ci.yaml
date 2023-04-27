@@ -25,17 +25,21 @@ jobs:
       uses: mobilecoinofficial/gh-actions/checkout@v0
 
     - name: Cache
+      id: cache
       uses: mobilecoinofficial/gh-actions/cache-go-binaries@708d32588d8bc83884ae65c557761b90d676c7fe
       with:
         cache_buster: ${{ vars.CACHE_BUSTER }}
 
     - name: Build
+      if: "! steps.cache.outputs.cache-hit"
       run: |
         go mod vendor
         go build -v
 
     - name: Copy binaries to cache
+      if: "! steps.cache.outputs.cache-hit"
       run: |
+        mkdir -p cache/
         cp prometheus-pg-exporter cache/
 
   docker:
