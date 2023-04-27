@@ -107,7 +107,7 @@ func serve(host string, port int) {
 	http.Handle("/metrics", promhttp.Handler())
 	err := http.ListenAndServe(fmt.Sprintf("%s:%d", host, port), nil)
 	if err != nil {
-		log.Debugf("error serving http: %v", err)
+		log.Errorf("error serving http: %v", err)
 		return
 	}
 }
