@@ -27,7 +27,7 @@ jobs:
       uses: mobilecoinofficial/gh-actions/checkout@v0
 
     - name: Cache
-      uses: mobilecoinofficial/gh-actions/cache-go-binaries@f5dc11bbbe84ce48a4d835630decb8df6f6386dd
+      uses: mobilecoinofficial/gh-actions/cache-go-binaries@708d32588d8bc83884ae65c557761b90d676c7fe
       with:
         cache_buster: ${{ vars.CACHE_BUSTER }}
 
@@ -49,7 +49,7 @@ jobs:
       uses: mobilecoinofficial/gh-actions/checkout@v0
 
     - name: Cache
-      uses: mobilecoinofficial/gh-actions/cache-go-binaries@f5dc11bbbe84ce48a4d835630decb8df6f6386dd
+      uses: mobilecoinofficial/gh-actions/cache-go-binaries@708d32588d8bc83884ae65c557761b90d676c7fe
       with:
         cache_buster: ${{ vars.CACHE_BUSTER }}
 
