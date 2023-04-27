@@ -31,7 +31,7 @@ jobs:
 
     - name: Cache
       id: cache
-      uses: mobilecoinofficial/gh-actions/cache-go-binaries@708d32588d8bc83884ae65c557761b90d676c7fe
+      uses: mobilecoinofficial/gh-actions/cache-go-binaries@v0
       with:
         cache_buster: ${{ vars.CACHE_BUSTER }}
 
@@ -56,7 +56,7 @@ jobs:
       uses: mobilecoinofficial/gh-actions/checkout@v0
 
     - name: Cache
-      uses: mobilecoinofficial/gh-actions/cache-go-binaries@708d32588d8bc83884ae65c557761b90d676c7fe
+      uses: mobilecoinofficial/gh-actions/cache-go-binaries@v0
       with:
         cache_buster: ${{ vars.CACHE_BUSTER }}
 
