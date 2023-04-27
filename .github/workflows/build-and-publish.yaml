@@ -23,21 +23,30 @@ jobs:
     runs-on: [self-hosted, Linux, small]
     container: golang:1.20
     steps:
+    - name: install zstd for gh cache bug
+      run: |
+        apt-get update -y
+        apt-get install -y zstd
+
     - name: Checkout
       uses: mobilecoinofficial/gh-actions/checkout@v0
 
     - name: Cache
-      uses: mobilecoinofficial/gh-actions/cache-go-binaries@f5dc11bbbe84ce48a4d835630decb8df6f6386dd
+      id: cache
+      uses: mobilecoinofficial/gh-actions/cache-go-binaries@v0
       with:
         cache_buster: ${{ vars.CACHE_BUSTER }}
 
     - name: Build
+      if: "! steps.cache.outputs.cache-hit"
       run: |
         go mod vendor
         go build -v
 
     - name: Copy binaries to cache
+      if: "! steps.cache.outputs.cache-hit"
       run: |
+        mkdir -p cache/
         cp prometheus-pg-exporter cache/
 
   publish:
@@ -49,7 +58,7 @@ jobs:
       uses: mobilecoinofficial/gh-actions/checkout@v0
 
     - name: Cache
-      uses: mobilecoinofficial/gh-actions/cache-go-binaries@f5dc11bbbe84ce48a4d835630decb8df6f6386dd
+      uses: mobilecoinofficial/gh-actions/cache-go-binaries@v0
       with:
         cache_buster: ${{ vars.CACHE_BUSTER }}
 
