@@ -17,25 +17,6 @@ env:
   DOCKER_ORG: mobilecoin
 
 jobs:
-  # Build docker container to test, but don't push
-  docker:
-    runs-on: [self-hosted, Linux, small]
-    steps:
-    - name: Checkout
-      uses: mobilecoinofficial/gh-actions/checkout@v0
-
-    - name: Docker
-      uses: mobilecoinofficial/gh-actions/docker@v0
-      with:
-        flavor: latest=true
-        images: ${{ env.DOCKER_ORG }}/${{ env.REPO }}
-        tags: |
-          type=ref,event=branch
-          type=semver,pattern=v{{version}}
-          type=sha
-        dockerfile: .internal-ci/docker/Dockerfile.${{ env.REPO }}
-        push: false
-
   lint-docker:
     runs-on: [self-hosted, Linux, small]
     steps:
@@ -112,7 +93,6 @@ jobs:
   # This is so we can just have one "standard" check to add to the branch protections.
   workflow-ok:
     needs:
-    - docker
     - lint-docker
     - lint-shell
     - lint-actions
