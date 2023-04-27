@@ -94,8 +94,3 @@ jobs:
       uses: softprops/action-gh-release@v1
       with:
         generate_release_notes: true
-
-
-00833a7ac6007349c26ca56e0a8d46732766fea8a167b2aa47213b2e3b264e8d-Linux-3918c051838aa92954135c733edf42710382535df37038ff39202ee0e239102b-go-build-artifacts
-
-00833a7ac6007349c26ca56e0a8d46732766fea8a167b2aa47213b2e3b264e8d-Linux-3918c051838aa92954135c733edf42710382535df37038ff39202ee0e239102b-go-build-artifacts
