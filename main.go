@@ -55,7 +55,9 @@ func checkDB(m *metrics) {
 			log.Errorf("Unable to parse DATABASE_URL")
 			os.Exit(1)
 		}
-		redactedUrl := fmt.Sprintf("%s://%s@%s%s", u.Scheme, u.User, u.Host, u.Path)
+
+		redactedUrl := fmt.Sprintf("%s://%s:xxxxx@%s%s", u.Scheme, u.User.Username(), u.Host, u.Path)
+		log.Debugf("%s", redactedUrl)
 
 		checkWait, err := strconv.Atoi(getEnv("CHECK_WAIT", "10"))
 		if err != nil {
