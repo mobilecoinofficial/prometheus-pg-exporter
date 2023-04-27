@@ -17,6 +17,56 @@ env:
   DOCKER_ORG: mobilecoin
 
 jobs:
+  build:
+    runs-on: [self-hosted, Linux, small]
+    container: golang:1.20
+    steps:
+    - name: Checkout
+      uses: mobilecoinofficial/gh-actions/checkout@v0
+
+    - name: Cache
+      uses: mobilecoinofficial/gh-actions/cache-go-binaries@708d32588d8bc83884ae65c557761b90d676c7fe
+      with:
+        cache_buster: ${{ vars.CACHE_BUSTER }}
+
+    - name: Build
+      run: |
+        go mod vendor
+        go build -v
+
+    - name: Copy binaries to cache
+      run: |
+        cp prometheus-pg-exporter cache/
+
+  docker:
+    runs-on: [self-hosted, Linux, small]
+    needs:
+    - build
+    steps:
+    - name: Checkout
+      uses: mobilecoinofficial/gh-actions/checkout@v0
+
+    - name: Cache
+      uses: mobilecoinofficial/gh-actions/cache-go-binaries@708d32588d8bc83884ae65c557761b90d676c7fe
+      with:
+        cache_buster: ${{ vars.CACHE_BUSTER }}
+
+    - name: Copy binaries from cache
+      run: |
+        cp cache/prometheus-pg-exporter ./
+
+    - name: Docker
+      uses: mobilecoinofficial/gh-actions/docker@v0
+      with:
+        dockerfile: .internal-ci/docker/Dockerfile.${{ env.REPO }}
+        flavor: latest=true
+        images: ${{ env.DOCKER_ORG }}/${{ env.REPO }}
+        tags: |
+          type=ref,event=branch
+          type=semver,pattern=v{{version}}
+          type=sha
+        push: false
+
   lint-docker:
     runs-on: [self-hosted, Linux, small]
     steps:
@@ -93,6 +143,7 @@ jobs:
   # This is so we can just have one "standard" check to add to the branch protections.
   workflow-ok:
     needs:
+    - docker
     - lint-docker
     - lint-shell
     - lint-actions
