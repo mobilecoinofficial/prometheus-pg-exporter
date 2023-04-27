@@ -62,9 +62,7 @@ spec:
                   name: {{ .Values.config.configMap.name }}
                   key: {{ .Values.config.configMap.keys.databaseName }}
             - name: DATABASE_URL
-              value: 'postgres://$(DATABASE_USERNAME):$(DATABASE_PASSWORD)@$(DATABASE_HOSTNAME):$(DATABASE_PORT/$(DATABASE_NAME)$(DATABASE_URL_OPTIONS)'
-            - name: LISTEN_HOST
-              value: '0.0.0.0'
+              value: 'postgres://$(DATABASE_USERNAME):$(DATABASE_PASSWORD)@$(DATABASE_HOSTNAME):$(DATABASE_PORT)/$(DATABASE_NAME)$(DATABASE_URL_OPTIONS)'
           ports:
             - name: metrics
               containerPort: 9090
