@@ -6,6 +6,9 @@ on:
     tags:
     - 'v*.*.*'
 
+permissions:
+  contents: write
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -35,7 +38,7 @@ jobs:
 
     - name: Copy binaries to cache
       run: |
-        cp prometheus-pg-exporter go_artifacts_cache/
+        cp prometheus-pg-exporter cache/
 
   publish:
     runs-on: [self-hosted, Linux, small]
@@ -52,7 +55,7 @@ jobs:
 
     - name: Copy binaries from cache
       run: |
-        cp go_artifacts_cache/prometheus-pg-exporter ./
+        cp cache/prometheus-pg-exporter ./
 
     - name: Docker
       uses: mobilecoinofficial/gh-actions/docker@v0
@@ -60,14 +63,14 @@ jobs:
         dockerfile: .internal-ci/docker/Dockerfile.${{ env.REPO }}
         flavor: latest=true
         images: ${{ env.DOCKER_ORG }}/${{ env.REPO }}
-        password: ${{ secrets.DOCKERHUB_TOKEN }}
         tags: |
           type=ref,event=branch
           type=semver,pattern=v{{version}}
           type=sha
         username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-    - name: Build helm chart
+    - name: Publish helm chart
       uses: mobilecoinofficial/gha-k8s-toolbox@v1
       with:
         action: helm-publish
@@ -77,3 +80,8 @@ jobs:
         chart_repo_password: ${{ secrets.HARBOR_PASSWORD }}
         chart_repo_username: ${{ secrets.HARBOR_USERNAME }}
         chart_version: ${{ github.ref_name }}
+
+    - name: Create a GitHub Release
+      uses: softprops/action-gh-release@v1
+      with:
+        generate_release_notes: true
