@@ -9,7 +9,6 @@ metadata:
 spec:
   selector:
     matchLabels:
-      app:
       {{- include "prometheus-pg-exporter.selectorLabels" . | nindent 6 }}
   endpoints:
   - port: metrics
