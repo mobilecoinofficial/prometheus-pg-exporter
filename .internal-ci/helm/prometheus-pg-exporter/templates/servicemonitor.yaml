@@ -2,7 +2,7 @@
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
-  name: {{ include "prometheus-pg-exporter.fullname" . }}-fog-ledger
+  name: {{ include "prometheus-pg-exporter.fullname" . }}
   labels:
     publish: grafana-cloud
     {{- include "prometheus-pg-exporter.labels" . | nindent 4 }}

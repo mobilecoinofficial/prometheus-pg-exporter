@@ -51,7 +51,8 @@ func checkDB(m *metrics) {
 		dbUrl := os.Getenv("DATABASE_URL")
 		u, err := url.Parse(dbUrl)
 		if err != nil {
-			log.Errorf("Unable to parse DATABASE_URL: %v", err)
+			// showing the value of err will leak the creds
+			log.Errorf("Unable to parse DATABASE_URL")
 			os.Exit(1)
 		}
 		redactedUrl := fmt.Sprintf("%s://%s@%s%s", u.Scheme, u.User, u.Host, u.Path)
