@@ -27,6 +27,8 @@ services:
     volumes:
     - ".:/app"
     - "pkg:/go/pkg/"
+    # extra_hosts:
+    # - "db:192.168.55.1"
 
 volumes:
   pkg:

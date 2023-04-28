@@ -1,12 +1,14 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"net/http"
 	"net/url"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -17,77 +19,121 @@ import (
 	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
-var log = logrus.New()
+var (
+	log = logrus.New()
+)
 
 type metrics struct {
 	dbUp *prometheus.GaugeVec
 }
 
-func main() {
-	logLevel, err := logrus.ParseLevel(getEnv("LOG_LEVEL", "info"))
-	if err != nil {
-		fmt.Printf("Invalid LOG_LEVEL: %v\n", err)
-		os.Exit(1)
-	}
-	log.SetLevel(logLevel)
-	log.SetFormatter(&logrus.JSONFormatter{})
-
-	m := setupMetrics()
-
-	go checkDB(m)
-
-	listenHost := getEnv("LISTEN_HOST", "127.0.0.1")
-	listenPort, err := strconv.Atoi(getEnv("LISTEN_PORT", "9090"))
-	if err != nil {
-		log.Errorf("Unable to parse LISTEN_PORT: %v", err)
-		os.Exit(1)
-	}
-	serve(listenHost, listenPort)
+type db struct {
+	url         string
+	redactedUrl string
+	checkWait   time.Duration
+	timeout     time.Duration
 }
 
-func checkDB(m *metrics) {
+func main() {
+	setupLogging()
+	m := setupMetrics()
+	d := setupDB()
+
+	// start DB checks
+	go checkDB(m, d)
+
+	// serve metrics endpoint
+	serve()
+}
+
+func checkDB(m *metrics, d *db) {
 	for {
-		// grab the url parse and redact user:pass
-		dbUrl := os.Getenv("DATABASE_URL")
-		u, err := url.Parse(dbUrl)
-		if err != nil {
-			// showing the value of err will leak the creds
-			log.Errorf("Unable to parse DATABASE_URL")
-			os.Exit(1)
-		}
-
-		redactedUrl := fmt.Sprintf("%s://%s:xxxxx@%s%s", u.Scheme, u.User.Username(), u.Host, u.Path)
-		log.Debugf("%s", redactedUrl)
-
-		checkWait, err := strconv.Atoi(getEnv("CHECK_WAIT", "10"))
-		if err != nil {
-			log.Errorf("Unable to parse CHECK_WAIT: %v", err)
-			os.Exit(1)
-		}
-		log.Debugf("Wait %d seconds before checking DB", checkWait)
-		time.Sleep(time.Duration(checkWait) * time.Second)
+		// create a context with a timeout to stop hanging database timeouts.
+		ctx := context.Background()
+		ctx, cancel := context.WithTimeout(ctx, d.timeout)
 
 		// test database connection
-		db, err := sql.Open("pgx", dbUrl)
+		db, err := sql.Open("pgx", d.url)
 		if err != nil {
 			log.Errorf("Unable to connect to database: %v", err)
-			m.dbUp.WithLabelValues(redactedUrl).Set(0)
+			// Set metric to "unhealthy" and sleep until next round
+			m.dbUp.WithLabelValues(d.redactedUrl).Set(0)
+			cancel()
+			time.Sleep(d.checkWait)
 			continue
 		}
 
 		// Ping database and make sure connection is up
-		err = db.Ping()
+		err = db.PingContext(ctx)
 		if err != nil {
 			log.Errorf("Unable to PING database: %v", err)
-			m.dbUp.WithLabelValues(redactedUrl).Set(0)
+			// Set metric to "unhealthy"
+			m.dbUp.WithLabelValues(d.redactedUrl).Set(0)
 			db.Close()
+			cancel()
+			// don't sleep if this is a deadline exceeded, we've waited enough
+			if !strings.Contains(err.Error(), "context deadline exceeded") {
+				time.Sleep(d.checkWait)
+			}
 			continue
 		}
 
-		// If we can query our db set value as up
+		// set metric to "healthy"
 		log.Info("Database connection is healthy")
-		m.dbUp.WithLabelValues(redactedUrl).Set(1)
+		m.dbUp.WithLabelValues(d.redactedUrl).Set(1)
+
+		// Clean up
 		db.Close()
+		cancel()
+
+		// sleep until next round
+		time.Sleep(d.checkWait)
+	}
+}
+
+func serve() {
+	host := getEnv("LISTEN_HOST", "127.0.0.1")
+
+	port, err := strconv.Atoi(getEnv("LISTEN_PORT", "9090"))
+	if err != nil {
+		log.Fatalf("Unable to parse LISTEN_PORT: %v", err)
+	}
+
+	log.Infof("Serving metrics at %s:%d/metrics", host, port)
+	http.Handle("/metrics", promhttp.Handler())
+
+	err = http.ListenAndServe(fmt.Sprintf("%s:%d", host, port), nil)
+	if err != nil {
+		log.Fatalf("error serving http: %v", err)
+	}
+}
+
+func setupDB() *db {
+	dbUrl := os.Getenv("DATABASE_URL")
+	u, err := url.Parse(dbUrl)
+	if err != nil {
+		// showing the value of err will leak the creds
+		log.Fatalf("Unable to parse DATABASE_URL")
+	}
+
+	redactedUrl := fmt.Sprintf("%s://%s:xxxxx@%s%s", u.Scheme, u.User.Username(), u.Host, u.Path)
+	log.Debugf("%s", redactedUrl)
+
+	checkWait, err := strconv.Atoi(getEnv("CHECK_WAIT", "10"))
+	if err != nil {
+		log.Fatalf("Unable to parse CHECK_WAIT: %v", err)
+	}
+
+	timeout, err := strconv.Atoi(getEnv("TIMEOUT", "10"))
+	if err != nil {
+		log.Fatalf("Unable to parse TIMEOUT: %v", err)
+	}
+
+	return &db{
+		url:         dbUrl,
+		redactedUrl: redactedUrl,
+		checkWait:   time.Duration(checkWait) * time.Second,
+		timeout:     time.Duration(timeout) * time.Second,
 	}
 }
 
@@ -105,14 +151,13 @@ func setupMetrics() *metrics {
 	return m
 }
 
-func serve(host string, port int) {
-	log.Infof("serving metrics at %s:%d/metrics", host, port)
-	http.Handle("/metrics", promhttp.Handler())
-	err := http.ListenAndServe(fmt.Sprintf("%s:%d", host, port), nil)
+func setupLogging() {
+	logLevel, err := logrus.ParseLevel(getEnv("LOG_LEVEL", "info"))
 	if err != nil {
-		log.Errorf("error serving http: %v", err)
-		return
+		log.Fatalf("Invalid LOG_LEVEL: %v\n", err)
 	}
+	log.SetLevel(logLevel)
+	log.SetFormatter(&logrus.JSONFormatter{})
 }
 
 func getEnv(key, fallback string) string {
