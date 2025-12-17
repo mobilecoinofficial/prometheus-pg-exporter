@@ -1,6 +1,4 @@
 self-hosted-runner:
   # Labels of self-hosted runner in array of string
   labels:
-  - small
-  - large
-  - large-cd
+  - mco-dev-small-x64
