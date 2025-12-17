@@ -11,7 +11,7 @@ on:
         description: Chart repo URL
         type: string
         required: false
-        default: https://harbor.mobilecoin.com/chartrepo/mobilecoinofficial-private
+        default: ghcr.io/mobilecoinofficial/charts
       chart_version:
         description: Chart version
         required: true

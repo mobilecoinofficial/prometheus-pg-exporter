@@ -26,8 +26,7 @@ jobs:
 
     uses: ./.github/workflows/workflow-deploy.yaml
     with:
-      chart_name: ghcr.io/mobilecoinofficial/charts
-      chart_repo: prometheus-pg-exporter
+      chart_name: prometheus-pg-exporter
       chart_version: ${{ github.ref_name }}
       namespace: ${{ matrix.targets.ns }}
       rancher_cluster: ${{ matrix.targets.cluster }}
@@ -46,8 +45,7 @@ jobs:
 
     uses: ./.github/workflows/workflow-deploy.yaml
     with:
-      chart_name: https://harbor.mobilecoin.com/chartrepo/mobilecoinofficial-public
-      chart_repo: prometheus-pg-exporter
+      chart_name: prometheus-pg-exporter
       chart_version: ${{ github.ref_name }}
       namespace: ${{ matrix.targets.ns }}
       rancher_cluster: ${{ matrix.targets.cluster }}

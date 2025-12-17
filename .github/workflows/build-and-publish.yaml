@@ -85,6 +85,7 @@ jobs:
       with:
         action: helm-publish-oci
         chart_app_version: ${{ github.ref_name }}
+        chart_name: ${{ env.REPO }}
         chart_path: .internal-ci/helm/${{ env.REPO }}
         chart_repo: ${{ env.CHART_REPO }}
         chart_repo_username: ${{ github.actor }}
