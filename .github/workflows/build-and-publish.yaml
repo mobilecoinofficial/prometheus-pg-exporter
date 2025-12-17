@@ -51,7 +51,7 @@ jobs:
         cp prometheus-pg-exporter cache/
 
   publish:
-    runs-on: [self-hosted, Linux, small]
+    runs-on: mco-dev-small-x64
     needs:
     - build
     steps:
