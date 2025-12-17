@@ -33,12 +33,6 @@ on:
         type: string
         required: true
     secrets:
-      HARBOR_PASSWORD:
-        description: harbor chart repo password
-        required: true
-      HARBOR_USERNAME:
-        description: harbor chart repo username
-        required: true
       RANCHER_TOKEN:
         description: Rancher access token
         required: true
@@ -62,9 +56,9 @@ jobs:
       - name: Deploy ${{ inputs.chart_name }}
         uses: mobilecoinofficial/gha-k8s-toolbox@v1
         with:
-          action: helm-deploy
-          chart_repo_username: ${{ secrets.HARBOR_USERNAME }}
-          chart_repo_password: ${{ secrets.HARBOR_PASSWORD }}
+          action: helm-deploy-oci
+          chart_repo_username: ${{ github.actor }}
+          chart_repo_password: ${{ github.token }}
           chart_repo: ${{ inputs.chart_repo }}
           chart_name: ${{ inputs.chart_name }}
           chart_set: |

@@ -8,6 +8,7 @@ on:
 
 permissions:
   contents: write
+  packages: write
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -16,7 +17,7 @@ concurrency:
 env:
   REPO: prometheus-pg-exporter
   DOCKER_ORG: mobilecoin
-  CHART_REPO: https://harbor.mobilecoin.com/chartrepo/mobilecoinofficial-public
+  CHART_REPO: ghcr.io/mobilecoinofficial/charts
 
 jobs:
   build:
@@ -82,12 +83,12 @@ jobs:
     - name: Publish helm chart
       uses: mobilecoinofficial/gha-k8s-toolbox@v1
       with:
-        action: helm-publish
+        action: helm-publish-oci
         chart_app_version: ${{ github.ref_name }}
         chart_path: .internal-ci/helm/${{ env.REPO }}
         chart_repo: ${{ env.CHART_REPO }}
-        chart_repo_password: ${{ secrets.HARBOR_PASSWORD }}
-        chart_repo_username: ${{ secrets.HARBOR_USERNAME }}
+        chart_repo_username: ${{ github.actor }}
+        chart_repo_password: ${{ github.token }}
         chart_version: ${{ github.ref_name }}
 
     - name: Create a GitHub Release
