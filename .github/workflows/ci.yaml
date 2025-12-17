@@ -83,9 +83,9 @@ jobs:
       uses: mobilecoinofficial/gh-actions/checkout@v0
 
     - name: Run hadolint with reviewdog
-      uses: reviewdog/action-hadolint@v1
+      uses: reviewdog/action-hadolint@@fc7ee4a9f71e521bc43e370819247b70e5327540 # v1.50.2
       with:
-        fail_on_error: true
+        fail_level: error
         reporter: github-pr-review
         exclude: |
           *.dockerignore
@@ -97,9 +97,9 @@ jobs:
       uses: mobilecoinofficial/gh-actions/checkout@v0
 
     - name: Run shellcheck with reviewdog
-      uses: reviewdog/action-shellcheck@v1
+      uses: reviewdog/action-shellcheck@5ebd09ddbe2ebb471646ce234c6c8dd18663ca7c # v1.30.0
       with:
-        fail_on_error: true
+        fail_level: error
         reporter: github-pr-review
 
   lint-actions:
@@ -109,9 +109,9 @@ jobs:
       uses: mobilecoinofficial/gh-actions/checkout@v0
 
     - name: Run actionlint with reviewdog
-      uses: reviewdog/action-actionlint@v1
+      uses: reviewdog/action-actionlint@a5524e1c19e62881d79c1f1b9b6f09f16356e281 # v1.65.2
       with:
-        fail_on_error: true
+        fail_level: error
         reporter: github-pr-review
 
   # no reviewdog for helm
@@ -142,9 +142,9 @@ jobs:
       uses: mobilecoinofficial/gh-actions/checkout@v0
 
     - name: golangci-lint
-      uses: reviewdog/action-golangci-lint@v2
+      uses: reviewdog/action-golangci-lint@vf9bba13753278f6a73b27a56a3ffb1bfda90ed71 # v2.8.0
       with:
-        fail_on_error: true
+        fail_level: error
         reporter: github-pr-review
 
 
