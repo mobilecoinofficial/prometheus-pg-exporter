@@ -21,7 +21,7 @@ env:
 
 jobs:
   build:
-    runs-on: [self-hosted, Linux, small]
+    runs-on: mco-dev-small-x64
     container: golang:1.20
     steps:
     - name: install zstd for gh cache bug

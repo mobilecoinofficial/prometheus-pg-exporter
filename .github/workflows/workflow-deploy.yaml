@@ -42,7 +42,7 @@ on:
 
 jobs:
   deploy:
-    runs-on: [self-hosted, Linux, small]
+    runs-on: mco-dev-small-x64
     steps:
       - name: Create namespace
         uses: mobilecoinofficial/gha-k8s-toolbox@v1
